@@ -1,0 +1,18 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #001a27;
+  transition: background-color 0.3s ease;
+}
+
+[data-theme="light"] .app {
+  background-color: #f7f9fb;
+}
+
+.app-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+

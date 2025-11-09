@@ -1,0 +1,33 @@
+image: node:18
+
+pipelines:
+  branches:
+    main:
+      - step:
+          name: Build & Deploy (Production)
+          caches:
+            - node
+          script:
+            - npm ci
+            - npm run build
+            - npm i -g wrangler
+            - wrangler pages deploy dist \
+                --project-name "$PROJECT_NAME" \
+                --branch main \
+                --account-id "$CLOUDFLARE_ACCOUNT_ID" \
+                --api-token "$CLOUDFLARE_API_TOKEN"
+  pull-requests:
+    '**':
+      - step:
+          name: Build & Deploy (Preview)
+          caches:
+            - node
+          script:
+            - npm ci
+            - npm run build
+            - npm i -g wrangler
+            - wrangler pages deploy dist \
+                --project-name "$PROJECT_NAME" \
+                --branch "$BITBUCKET_BRANCH" \
+                --account-id "$CLOUDFLARE_ACCOUNT_ID" \
+                --api-token "$CLOUDFLARE_API_TOKEN"

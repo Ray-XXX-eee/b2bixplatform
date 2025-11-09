@@ -1,0 +1,338 @@
+{
+  "assistants": [
+    {
+      "name": "1. B2B Sales - Standalone - Meeting Note Tool",
+      "description": "Standalone B2B Sales meeting note summary tool ",
+      "version": "1.0v",
+      "model": "gpt 3.5",
+      "owner": "Operations",
+      "welcomeMessage": "Hello! I'm your Internal Meeting Assistant",
+      "capabilities": ["Generating meeting summaries", "Extracting key points", "Creating action items from meetings"],
+      "api": {
+        "authUrl": "https://us.api.customer.ixhello.com/v1/oauth/Token",
+        "chatUrl": "https://us.api.customer.ixhello.com/v1/Assistant/chat2/a74d2d49-34cf-4bfd-bd8c-c90ab9163b84",
+        "assistantId": "a74d2d49-34cf-4bfd-bd8c-c90ab9163b84",
+        "credentials": {
+          "user_name": "kaushik.saha@concentrix.com",
+          "grant_type": "password",
+          "client_id": "cnx_pufferfish",
+          "client_secret": "Zrd4FedwW7wB7VrCPmU6x4Q42It28clEE6aQlO9UoTpZ4nOw0Ha6zmMhRNCFb7b3"
+        }
+      },
+      "components": [
+        {
+          "componentType": "inputBox",
+          "label": "",
+          "header": "Enter meeting transcript or notes"
+        }
+      ],
+      "fileUpload": {
+        "enabled": true,
+        "acceptedTypes": [".docx", ".pptx", ".pdf"],
+        "maxSize": 10485760
+      }
+    },
+    {
+      "name": "Sentiment agent",
+      "description": "This is sentiment analyser which analyses CRM and Email data",
+      "version": "1.0v",
+      "model": "gpt 3.5",
+      "owner": "Sales ops",
+      "welcomeMessage": "Hello! I'm your Sentiment agent, drop a CRM or Email content to analyze sentiment",
+      "capabilities": ["Analyzing customer sentiment", "Detecting emotional tone", "Providing sentiment scores"],
+      "api": {
+        "authUrl": "https://us.api.customer.ixhello.com/v1/oauth/Token",
+        "chatUrl": "https://us.api.customer.ixhello.com/v1/Assistant/chat2/4e4b4c03-ada9-4bf0-a939-9f72a5c735fa",
+        "assistantId": "4e4b4c03-ada9-4bf0-a939-9f72a5c735fa",
+        "credentials": {
+          "user_name": "kaushik.saha@concentrix.com",
+          "grant_type": "password",
+          "client_id": "cnx_pufferfish",
+          "client_secret": "Zrd4FedwW7wB7VrCPmU6x4Q42It28clEE6aQlO9UoTpZ4nOw0Ha6zmMhRNCFb7b3"
+        }
+      },
+      "components": [
+        {
+          "componentType": "inputBox",
+          "label": "",
+          "header": "Enter CRM or Email data:"
+        },
+        {
+          "componentType": "radio",
+          "listOfOptions": ["CRM", "EMAIL"],
+          "header": "Select input type:",
+          "additionalInstructions": "Please analyse the sentiment of {{value}} data."
+        }
+      ]
+    },
+    {
+      "name": "Email Subject line Generator",
+      "description": "This is an email subject line generator",
+      "version": "1.0v",
+      "model": "gpt 3.5",
+      "owner": "Sales ops",
+      "welcomeMessage": "Hello! I'm your Email Subject line Generator, drop an Email content to generate a subject line",
+      "capabilities": ["Generating catchy subject lines", "Improving open rates", "Customizing subject lines for different audiences"],
+      "api": {
+        "authUrl": "https://us.api.customer.ixhello.com/v1/oauth/Token",
+        "chatUrl": "https://us.api.customer.ixhello.com/v1/Assistant/chat2/a2427eee-2771-42cf-b6e0-3283bcaea079",
+        "assistantId": "a2427eee-2771-42cf-b6e0-3283bcaea079",
+        "credentials": {
+          "user_name": "kaushik.saha@concentrix.com",
+          "grant_type": "password",
+          "client_id": "cnx_pufferfish",
+          "client_secret": "Zrd4FedwW7wB7VrCPmU6x4Q42It28clEE6aQlO9UoTpZ4nOw0Ha6zmMhRNCFb7b3"
+        }
+      },
+      "components": [
+        {
+          "componentType": "inputBox",
+          "label": "",
+          "header": "Enter Email data:"
+        }
+      ]
+    },
+    {
+      "name": "Translation agent",
+      "description": "This is translation agent",
+      "version": "1.5v",
+      "model": "gpt 3.5",
+      "owner": "Sales ops",
+      "welcomeMessage": "Hello! I'm your translation agent",
+      "capabilities": ["Translating text between languages", "Maintaining context and meaning", "Adapting tone for different audiences"],
+      "api": {
+        "authUrl": "https://us.api.customer.ixhello.com/v1/oauth/Token",
+        "chatUrl": "https://us.api.customer.ixhello.com/v1/Assistant/chat2/cd88d337-df60-4d93-9d49-460468c2f546",
+        "assistantId": "cd88d337-df60-4d93-9d49-460468c2f546",
+        "credentials": {
+          "user_name": "kaushik.saha@concentrix.com",
+          "grant_type": "password",
+          "client_id": "cnx_pufferfish",
+          "client_secret": "Zrd4FedwW7wB7VrCPmU6x4Q42It28clEE6aQlO9UoTpZ4nOw0Ha6zmMhRNCFb7b3"
+        }
+      },
+      "components": [
+        {
+          "componentType": "inputBox",
+          "label": "",
+          "header": "Enter text here"
+        },
+        {
+          "componentType": "dropDown",
+          "listOfOptions": ["Afrikaans", "Arabic", "Chinese", "English", "French", "German", "Hindi", "Italian", "Japanese", "Korean", "Portuguese", "Russian", "Spanish", "Swahili", "Tamil", "Thai", "Turkish", "Urdu"],
+          "header": "Translate to:"
+        }
+      ]
+    },
+    {
+      "name": "B2B InsightX",
+      "description": "Input your Business Review Deck to receive a rating and get coaching assistance on your existing Business Review deck or help in building a new Business Review deck. ",
+      "version": "1.0v",
+      "model": "gpt 4.0",
+      "owner": "Sales ops",
+      "welcomeMessage": "Hello! I'm your Business Deck review assistant, drop a deck content to generate insights",
+      "capabilities": ["Deck review & analysis", "Business Insight", "Quantitative summaries", "Qualitative insights"],
+      "api": {
+        "authUrl": "https://us.api.customer.ixhello.com/v1/oauth/Token",
+        "chatUrl": "https://us.api.customer.ixhello.com/v1/Assistant/chat2/222ebc8e-dd96-4415-8400-20445876c6d8",
+        "assistantId": "222ebc8e-dd96-4415-8400-20445876c6d8",
+        "credentials": {
+          "user_name": "kaushik.saha@concentrix.com",
+          "grant_type": "password",
+          "client_id": "cnx_pufferfish",
+          "client_secret": "Zrd4FedwW7wB7VrCPmU6x4Q42It28clEE6aQlO9UoTpZ4nOw0Ha6zmMhRNCFb7b3"
+        }
+      },
+      "components": [
+        {
+          "componentType": "inputBox",
+          "label": "",
+          "header": "Enter Email data"
+        },
+        {
+          "componentType": "radio",
+          "header": "Choose input type",
+          "listOfOptions": ["Business Review Deck", "Opportunity data file"]
+        }
+      ],
+      "fileUpload": {
+        "enabled": true,
+        "acceptedTypes": [".docx", ".pptx", ".pdf"],
+        "maxSize": 10485760
+      }
+    },
+    {
+      "name": "B2B Solutions - Tech assistant",
+      "description": "Provide insights on a specific company - price and feature comparissons.  ",
+      "version": "1.0v",
+      "model": "gpt 4.0",
+      "owner": "Sales ops",
+      "welcomeMessage": "Hello! I'm your company feature comparison, drop company names / URLs along with query",
+      "capabilities": ["Smart Web Research & Data Retrieval", "Automated Comparison Engine", "AI-Powered Content Extraction"],
+      "api": {
+        "authUrl": "https://us.api.customer.ixhello.com/v1/oauth/Token",
+        "chatUrl": "https://us.api.customer.ixhello.com/v1/Assistant/chat2/54322689-2c9f-4764-b4ba-56c4604532b4",
+        "assistantId": "54322689-2c9f-4764-b4ba-56c4604532b4",
+        "credentials": {
+          "user_name": "kaushik.saha@concentrix.com",
+          "grant_type": "password",
+          "client_id": "cnx_pufferfish",
+          "client_secret": "Zrd4FedwW7wB7VrCPmU6x4Q42It28clEE6aQlO9UoTpZ4nOw0Ha6zmMhRNCFb7b3"
+        }
+      },
+
+      "components": [
+        {
+          "componentType": "inputField",
+          "label": "",
+          "header": "Enter First Company Name or URL",
+          "additionalInstructions": "This is first company: {{value}}"
+        },
+        {
+          "componentType": "inputField",
+          "label": "",
+          "header": "Enter Second Company Name or URL",
+          "additionalInstructions": "This is second company: {{value}}"
+        },
+        {
+          "componentType": "inputField",
+          "label": "",
+          "header": "Enter Product or topic to compare",
+          "additionalInstructions": "This is question to evaluate and compare between above mentioned companies: '{{value}}'"
+        }
+      ]
+    },
+    {
+      "name": "Sales Call Quality and Insights",
+      "description": "Provide insights on a specific company - price and feature comparissons ",
+      "version": "1.0v",
+      "model": "gpt 4.0",
+      "owner": "Sales Operations",
+      "welcomeMessage": "Hello! I'm your Sales Call Quality agent, upload call recordings for performance analysis",
+      "capabilities": ["Call performance analysis", "Coaching recommendations", "Quality assurance scoring", "Improvement suggestions"],
+      "api": {
+        "authUrl": "https://us.api.customer.ixhello.com/v1/oauth/Token",
+        "chatUrl": "https://us.api.customer.ixhello.com/v1/Assistant/chat2/833c5ecb-3317-4b95-8b14-ed716bf4979e",
+        "assistantId": "833c5ecb-3317-4b95-8b14-ed716bf4979e",
+        "credentials": {
+          "user_name": "kaushik.saha@concentrix.com",
+          "grant_type": "password",
+          "client_id": "cnx_pufferfish",
+          "client_secret": "Zrd4FedwW7wB7VrCPmU6x4Q42It28clEE6aQlO9UoTpZ4nOw0Ha6zmMhRNCFb7b3"
+        }
+      },
+      "components": [
+        {
+          "componentType": "inputBox",
+          "label": "",
+          "header": "Enter Call transcript:"
+        }
+      ]
+    },
+    {
+      "name": "Research Buddy ",
+      "description": "Research Buddy is powered on to help you find relevant prospecting insights for any Target Company. Simply provide the company name to get started!",
+      "version": "1.0v",
+      "model": "gpt 4.0",
+      "owner": "Sales Operations",
+      "welcomeMessage": "Hello! I'm your Pre Call Research agent, provide company details for comprehensive research",
+      "capabilities": ["Company background research", "Financial analysis", "Competitive landscape", "Recent news and events"],
+      "api": {
+        "authUrl": "https://us.api.customer.ixhello.com/v1/oauth/Token",
+        "chatUrl": "https://us.api.customer.ixhello.com/v1/Assistant/chat2/6a777174-989e-4596-ab45-906d8887f8ee",
+        "assistantId": "6a777174-989e-4596-ab45-906d8887f8ee",
+        "credentials": {
+          "user_name": "kaushik.saha@concentrix.com",
+          "grant_type": "password",
+          "client_id": "cnx_pufferfish",
+          "client_secret": "Zrd4FedwW7wB7VrCPmU6x4Q42It28clEE6aQlO9UoTpZ4nOw0Ha6zmMhRNCFb7b3"
+        }
+      },
+      "components": [
+        {
+          "componentType": "inputField",
+          "label": "",
+          "header": "Enter enter company name:"
+        }
+      ]
+    },
+    {
+      "name": "B2B Sales Research Tool",
+      "description": "This Assistant is created for Coaching analysis ad correlation with QA indicatiors",
+      "version": "1.0v",
+      "model": "gpt 4.0",
+      "owner": "Sales Operations",
+      "welcomeMessage": "Hello! I'm your Prospect Research agent, provide prospect details for detailed analysis",
+      "capabilities": ["Prospect company analysis", "Decision maker identification", "Pain point analysis", "Competitive positioning", "Engagement strategy recommendations"],
+      "api": {
+        "authUrl": "https://us.api.customer.ixhello.com/v1/oauth/Token",
+        "chatUrl": "https://us.api.customer.ixhello.com/v1/Assistant/chat2/09ce2ba1-6e16-4c4c-89b8-29baa6836a13",
+        "assistantId": "09ce2ba1-6e16-4c4c-89b8-29baa6836a13",
+        "credentials": {
+          "user_name": "kaushik.saha@concentrix.com",
+          "grant_type": "password",
+          "client_id": "cnx_pufferfish",
+          "client_secret": "Zrd4FedwW7wB7VrCPmU6x4Q42It28clEE6aQlO9UoTpZ4nOw0Ha6zmMhRNCFb7b3"
+        }
+      },
+      "components": [
+        {
+          "componentType": "inputField",
+          "label": "",
+          "header": "Enter company name:"
+        }
+      ]
+    },
+    {
+      "name": "Pre Call Company Research - web search ",
+      "description": "Research Tool for B2B Sales - Comprehensive company intelligence gathering",
+      "version": "1.0v",
+      "model": "gpt 4.0",
+      "owner": "Sales Operations",
+      "welcomeMessage": "Hello! I'm your Pre Call Research agent, provide company details for comprehensive research",
+      "capabilities": ["Company background research", "Financial analysis", "Competitive landscape", "Key personnel identification", "Recent news and events"],
+      "status": "coming_soon"
+    },
+
+    {
+      "name": "Personalized client outreach email- Response",
+      "description": "B2B Sales Research Tool for comprehensive prospect intelligence",
+      "version": "1.0v",
+      "model": "gpt 4.0",
+      "owner": "Sales Operations",
+      "welcomeMessage": "Hello! I'm your Prospect Research agent, provide prospect details for detailed analysis",
+      "capabilities": ["Email Input & Detection", "Tone and Style Customization", "Intent-based Rewriting", "Context Awareness"],
+      "status": "coming_soon"
+    },
+    {
+      "name": "Personalized client outreach Trail email- Response",
+      "description": "B2B Sales Research Tool for comprehensive prospect intelligence",
+      "version": "1.0v",
+      "model": "gpt 4.0",
+      "owner": "Sales Operations",
+      "welcomeMessage": "Hello! I'm your Prospect Research agent, provide prospect details for detailed analysis",
+      "capabilities": ["Email Input & Detection", "DTone and Style Customization", "Intent-based Rewriting", "Context Awareness"],
+      "status": "coming_soon"
+    },
+    {
+      "name": "Prospecting email sequence ",
+      "description": "Generate a sequence of emails based on a prompt that can be scheduled",
+      "version": "1.0v",
+      "model": "gpt 4.0",
+      "owner": "Sales Operations",
+      "welcomeMessage": "Hello! I'm your Prospect Email Sequencing agent, provide prospect details for schdeuled emails",
+      "capabilities": ["Prompt-Based Email Generation", "Sequence Structuring & Optimization", "Scheduling"],
+      "status": "coming_soon"
+    },
+    {
+      "name": "Sales Call summary ",
+      "description": "Drop in call transcript and summarize the interaction",
+      "version": "1.0v",
+      "model": "gpt 4.0",
+      "owner": "Sales Operations",
+      "welcomeMessage": "Hello! I'm your call summary agent, provide prospect details and analysis for whole communication",
+      "capabilities": ["Intent and Theme Extraction", "Action Item Detection", "Outcome Identification", "AI-Powered Summarization"],
+      "status": "coming_soon"
+    }
+  ]
+}

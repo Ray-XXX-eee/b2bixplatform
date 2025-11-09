@@ -1,0 +1,128 @@
+.file-upload-container {
+  margin-bottom: 20px;
+}
+
+.file-upload-area {
+  border: 2px dashed rgba(37, 226, 204, 0.3);
+  border-radius: 12px;
+  padding: 32px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background-color: rgba(0, 61, 91, 0.1);
+  position: relative;
+}
+
+[data-theme="light"] .file-upload-area {
+  border: 2px dashed #d0ebe6;
+  background-color: rgba(37, 226, 204, 0.05);
+}
+
+.file-upload-area:hover {
+  border-color: #25E2CC;
+  background-color: rgba(37, 226, 204, 0.1);
+  transform: translateY(-2px);
+}
+
+[data-theme="light"] .file-upload-area:hover {
+  border-color: #25E2CC;
+  background-color: rgba(37, 226, 204, 0.08);
+}
+
+.file-upload-area.drag-over {
+  border-color: #25E2CC;
+  background-color: rgba(37, 226, 204, 0.15);
+  transform: scale(1.02);
+}
+
+[data-theme="light"] .file-upload-area.drag-over {
+  border-color: #25E2CC;
+  background-color: rgba(37, 226, 204, 0.12);
+}
+
+.file-upload-area.processing {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.upload-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.upload-icon {
+  color: #25E2CC;
+  transition: color 0.3s ease;
+}
+
+[data-theme="light"] .upload-icon {
+  color: #003D5B;
+}
+
+.upload-text {
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0;
+  transition: color 0.3s ease;
+}
+
+[data-theme="light"] .upload-text {
+  color: #374151;
+}
+
+.upload-subtext {
+  color: #9ca3af;
+  font-size: 14px;
+  margin: 0;
+  transition: color 0.3s ease;
+}
+
+[data-theme="light"] .upload-subtext {
+  color: #6b7280;
+}
+
+.processing-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(37, 226, 204, 0.3);
+  border-top: 3px solid #25E2CC;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.upload-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 12px 16px;
+  background-color: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  color: #fecaca;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+[data-theme="light"] .upload-error {
+  background-color: rgba(239, 68, 68, 0.05);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #dc2626;
+}
+
+.upload-error svg {
+  flex-shrink: 0;
+  color: #ef4444;
+}
+
+[data-theme="light"] .upload-error svg {
+  color: #dc2626;
+}

@@ -1,0 +1,95 @@
+.bottom-input {
+  background-color: #002533;
+  border-top: 2px solid rgba(37, 226, 204, 0.3);
+  padding: 20px 32px;
+  transition: all 0.3s ease;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .bottom-input {
+  background-color: #ffffff;
+  border-top: 2px solid rgba(37, 226, 204, 0.3);
+  box-shadow: 0 -2px 10px rgba(0, 61, 91, 0.05);
+}
+
+.input-container {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.input-field {
+  flex: 1;
+  background-color: rgba(0, 61, 91, 0.4);
+  border: 2px solid rgba(37, 226, 204, 0.3);
+  border-radius: 10px;
+  color: #ffffff;
+  padding: 14px 18px;
+  font-size: 15px;
+  font-family: inherit;
+  transition: all 0.3s;
+}
+
+[data-theme="light"] .input-field {
+  background-color: #f5f8fa;
+  border: 2px solid #d0ebe6;
+  color: #003D5B;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: #25E2CC;
+  background-color: rgba(0, 61, 91, 0.6);
+  box-shadow: 0 0 0 3px rgba(37, 226, 204, 0.1);
+}
+
+[data-theme="light"] .input-field:focus {
+  border-color: #25E2CC;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(37, 226, 204, 0.1);
+}
+
+.input-field::placeholder {
+  color: #6b7280;
+  transition: color 0.3s ease;
+}
+
+[data-theme="light"] .input-field::placeholder {
+  color: #9ca3af;
+}
+
+.submit-btn {
+  background: linear-gradient(135deg, #25E2CC 0%, #1fcab4 100%);
+  border: none;
+  border-radius: 10px;
+  color: #003D5B;
+  padding: 14px 28px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 4px 16px rgba(37, 226, 204, 0.3);
+  letter-spacing: 0.3px;
+}
+
+[data-theme="light"] .submit-btn {
+  background: linear-gradient(135deg, #25E2CC 0%, #1fcab4 100%);
+  color: #003D5B;
+}
+
+.submit-btn:hover {
+  background: linear-gradient(135deg, #1fcab4 0%, #17b39f 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(37, 226, 204, 0.4);
+}
+
+[data-theme="light"] .submit-btn:hover {
+  background: linear-gradient(135deg, #1fcab4 0%, #17b39f 100%);
+}
+
+.submit-btn:active {
+  transform: translateY(0);
+}
+

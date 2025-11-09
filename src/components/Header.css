@@ -1,0 +1,135 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 32px;
+  background-color: #003D5B;
+  border-bottom: 2px solid #25E2CC;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .header {
+  background-color: #ffffff;
+  border-bottom: 2px solid #25E2CC;
+  box-shadow: 0 2px 8px rgba(0, 61, 91, 0.08);
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.header-logo {
+  height: 36px;
+  width: auto;
+}
+
+.header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.header-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0;
+  transition: color 0.3s ease;
+  letter-spacing: 0.3px;
+}
+
+[data-theme="light"] .header-title {
+  color: #003D5B;
+}
+
+.header-subtitle {
+  font-size: 13px;
+  color: #25E2CC;
+  transition: color 0.3s ease;
+  font-weight: 500;
+}
+
+[data-theme="light"] .header-subtitle {
+  color: #006b7d;
+}
+
+.header-right {
+  display: flex;
+  gap: 16px;
+}
+
+.header-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: 1.5px solid #25E2CC;
+  color: #ffffff;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 9px 16px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+[data-theme="light"] .header-btn {
+  border: 1.5px solid #25E2CC;
+  color: #003D5B;
+}
+
+.header-btn:hover {
+  color: #ef4444;
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+  transform: translateY(-1px);
+}
+
+[data-theme="light"] .header-btn:hover {
+  color: #dc2626;
+  border-color: #dc2626;
+  background: rgba(220, 38, 38, 0.08);
+  transform: translateY(-1px);
+}
+
+.theme-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1.5px solid #25E2CC;
+  color: #ffffff;
+  cursor: pointer;
+  padding: 9px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  width: 40px;
+  height: 40px;
+}
+
+[data-theme="light"] .theme-toggle-btn {
+  border: 1.5px solid #25E2CC;
+  color: #003D5B;
+}
+
+.theme-toggle-btn:hover {
+  color: #25E2CC;
+  border-color: #25E2CC;
+  background: rgba(37, 226, 204, 0.15);
+  transform: translateY(-1px);
+}
+
+[data-theme="light"] .theme-toggle-btn:hover {
+  color: #003D5B;
+  border-color: #1fcab4;
+  background: rgba(37, 226, 204, 0.1);
+  transform: translateY(-1px);
+}
+
+.header-btn svg {
+  flex-shrink: 0;
+}
+

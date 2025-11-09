@@ -1,0 +1,125 @@
+.assistant-details {
+  width: 340px;
+  background-color: #002533;
+  border-left: 2px solid #25E2CC;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
+}
+
+[data-theme="light"] .assistant-details {
+  background-color: #ffffff;
+  border-left: 2px solid #b8e6df;
+}
+
+.details-header {
+  padding: 24px 20px;
+  border-bottom: 2px solid rgba(37, 226, 204, 0.3);
+  transition: border-color 0.3s ease;
+}
+
+[data-theme="light"] .details-header {
+  border-bottom: 2px solid rgba(37, 226, 204, 0.2);
+}
+
+.details-header h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #25E2CC;
+  margin: 0;
+  transition: color 0.3s ease;
+  letter-spacing: 0.3px;
+}
+
+[data-theme="light"] .details-header h3 {
+  color: #003D5B;
+}
+
+.details-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.details-empty {
+  padding: 16px;
+  font-size: 13px;
+  color: #9ca3af;
+  transition: color 0.3s ease;
+}
+
+[data-theme="light"] .details-empty {
+  color: #6b7280;
+}
+
+.details-description {
+  font-size: 14px;
+  color: #b8d4dd;
+  background-color: rgba(0, 61, 91, 0.4);
+  border: 2px solid rgba(37, 226, 204, 0.3);
+  border-radius: 12px;
+  padding: 16px;
+  transition: all 0.3s ease;
+  line-height: 1.6;
+}
+
+[data-theme="light"] .details-description {
+  color: #003D5B;
+  background-color: #f5f8fa;
+  border: 2px solid #d0ebe6;
+}
+
+.details-meta {
+  background-color: rgba(0, 61, 91, 0.3);
+  border: 2px solid rgba(37, 226, 204, 0.25);
+  border-radius: 12px;
+  padding: 16px;
+  transition: all 0.3s ease;
+}
+
+[data-theme="light"] .details-meta {
+  background-color: #f5f8fa;
+  border: 2px solid #d0ebe6;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(37, 226, 204, 0.15);
+  transition: border-color 0.3s ease;
+}
+
+[data-theme="light"] .detail-row {
+  border-bottom: 1px solid rgba(37, 226, 204, 0.2);
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+}
+
+.detail-label {
+  font-size: 13px;
+  color: #7a9aa8;
+  transition: color 0.3s ease;
+  font-weight: 500;
+}
+
+[data-theme="light"] .detail-label {
+  color: #6b7280;
+}
+
+.detail-value {
+  font-size: 14px;
+  color: #ffffff;
+  transition: color 0.3s ease;
+  font-weight: 600;
+}
+
+[data-theme="light"] .detail-value {
+  color: #003D5B;
+}
+
+
