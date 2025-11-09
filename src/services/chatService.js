@@ -1,170 +1,89 @@
+// src/services/chatService.js
+
 class ChatService {
-  constructor() {
-    this.accessToken = null;
-    this.tokenExpiry = null;
+  constructor(apiKey) {
+    this.apiKey = apiKey;
+    this.model = "gemini-2.0-flash";
   }
 
-  getProxyUrl(url) {
-    if (url.includes('us.customer.ixhello.com')) {
-      return url.replace('https://us.customer.ixhello.com', '/chatbot-api');
-    }
-    return url.replace('https://us.api.customer.ixhello.com', '/api');
-  }
-
-  generateSessionId(assistantId) {
-    const randomGuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+  generateSessionId(prefix = "gemini") {
+    const randomGuid = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
       const r = (Math.random() * 16) | 0;
-      const v = c === 'x' ? r : (r & 0x3) | 0x8;
+      const v = c === "x" ? r : (r & 0x3) | 0x8;
       return v.toString(16);
     });
-    return `${assistantId}_${randomGuid}`;
+    return `${prefix}_${randomGuid}`;
   }
 
-  async getAccessToken(authUrl, credentials) {
-    if (this.accessToken && this.tokenExpiry && Date.now() < this.tokenExpiry) {
-      return this.accessToken;
+  /**
+   * Send a message to Gemini 2.0 Flash (Streaming)
+   * 
+   * @param {string} message - The user's message
+   * @param {function(string):void} onChunk - Callback for each streamed text chunk
+   * @param {function(string):void} onComplete - Callback when streaming ends
+   * @param {string} sessionId - Optional session ID
+   * @returns {Promise<{session_id: string, message: string}>}
+   */
+  async sendMessageStream(message, onChunk, onComplete, sessionId = "") {
+    const finalSessionId = sessionId || this.generateSessionId();
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:streamGenerateContent?key=${this.apiKey}`;
+
+    const requestBody = {
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: message }],
+        },
+      ],
+    };
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Gemini stream request failed: ${response.status} - ${errorText}`);
     }
 
-    try {
-      const params = new URLSearchParams(credentials);
-      const proxyUrl = this.getProxyUrl(authUrl);
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder("utf-8");
+    let accumulatedText = "";
 
-      const response = await fetch(`${proxyUrl}?${params.toString()}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
 
-      if (!response.ok) {
-        throw new Error(`Authentication failed: ${response.status}`);
+      const chunk = decoder.decode(value, { stream: true });
+      const jsonLines = chunk.split("\n").filter(line => line.trim() !== "");
+
+      for (const line of jsonLines) {
+        try {
+          const obj = JSON.parse(line);
+          const textPart = obj?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (textPart) {
+            accumulatedText += textPart;
+            if (onChunk) onChunk(textPart);
+          }
+        } catch {
+          // Skip incomplete JSON lines
+        }
       }
-
-      const data = await response.json();
-      this.accessToken = data.access_token;
-      this.tokenExpiry = Date.now() + (data.expires_in || 3600) * 1000;
-
-      return this.accessToken;
-    } catch (error) {
-      console.error('Error getting access token:', error);
-      throw error;
     }
-  }
 
-  async sendMessage(chatUrl, authUrl, credentials, assistantId, message, sessionId = '') {
-    try {
-      const token = await this.getAccessToken(authUrl, credentials);
+    if (onComplete) onComplete(accumulatedText);
 
-      const proxyUrl = this.getProxyUrl(chatUrl);
-
-      const finalSessionId = sessionId || this.generateSessionId(assistantId);
-
-      const requestBody = {
-        session_id: finalSessionId,
-        message: message,
-      };
-
-      console.log('📤 Sending chat request:', {
-        url: proxyUrl,
-        headers: {
-          'Content-Type': 'application/json',
-          access_token: token.substring(0, 20) + '...',
-        },
-        body: requestBody,
-      });
-
-      const response = await fetch(proxyUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          access_token: token,
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      console.log('📥 Chat response status:', response.status);
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        console.error('❌ Chat API error:', errorData);
-        throw new Error(`Chat request failed: ${response.status} - ${JSON.stringify(errorData)}`);
-      }
-
-      const data = await response.json();
-      console.log('✅ Chat response:', data);
-
-      const responseData = data.data || data;
-      const sessionIdFromResponse = responseData.sessionId || responseData.session_id || finalSessionId;
-      const messageText = responseData.chatResponsePlainText || responseData.chatResponseHtml || responseData.message || data.message;
-
-      return {
-        session_id: sessionIdFromResponse,
-        message: messageText,
-        rawData: data,
-      };
-    } catch (error) {
-      console.error('Error sending message:', error);
-      throw error;
-    }
-  }
-
-  async sendMeetingMessage(chatUrl, skillPublishingId, clientId, message, sessionId = '') {
-    try {
-      const proxyUrl = this.getProxyUrl(chatUrl);
-
-      const finalSessionId = sessionId || this.generateSessionId(skillPublishingId);
-
-      const requestBody = {
-        skillPublishingId: skillPublishingId,
-        ClientId: clientId,
-        ClientSessionId: finalSessionId,
-        localtime: new Date().toISOString().slice(0, 19).replace('T', ' '),
-        message: message,
-      };
-
-      console.log('📤 Sending meeting chat request:', {
-        url: proxyUrl,
-        body: requestBody,
-      });
-
-      const response = await fetch(proxyUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      console.log('📥 Meeting chat response status:', response.status);
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        console.error('❌ Meeting chat API error:', errorData);
-        throw new Error(`Meeting chat request failed: ${response.status} - ${JSON.stringify(errorData)}`);
-      }
-
-      const data = await response.json();
-      console.log('✅ Meeting chat response:', data);
-
-      const messageText = data.response || data.message || data.text || 'I received your message but could not generate a response.';
-
-      return {
-        session_id: finalSessionId,
-        message: messageText,
-        rawData: data,
-      };
-    } catch (error) {
-      console.error('Error sending meeting message:', error);
-      throw error;
-    }
-  }
-
-  clearToken() {
-    this.accessToken = null;
-    this.tokenExpiry = null;
+    return {
+      session_id: finalSessionId,
+      message: accumulatedText,
+    };
   }
 }
 
-const chatService = new ChatService();
+const chatService = new ChatService(import.meta.env.VITE_GOOGLE_API_KEY); // or process.env.GEMINI_API_KEY
 
 export default chatService;
