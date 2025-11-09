@@ -17,6 +17,7 @@ class ChatService {
 
   /**
    * Generates a unique session ID (UUID v4 style)
+   * @deprecated - No longer needed for Gemini, kept for backward compatibility
    */
   generateSessionId(prefix = "gemini") {
     const randomGuid = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
@@ -33,22 +34,25 @@ class ChatService {
    * @param {string} message - The user's input text
    * @param {function(string):void} onChunk - Callback fired for each partial text chunk
    * @param {function(string):void} onComplete - Callback when the stream finishes
-   * @param {string} [sessionId] - Optional session ID for continuity
-   * @returns {Promise<{session_id: string, message: string}>}
+   * @param {Array} [conversationHistory] - Optional conversation history for context
+   * @returns {Promise<{message: string, conversationHistory: Array}>}
    */
-  async sendMessageStream(message, onChunk, onComplete, sessionId = "") {
+  async sendMessageStream(message, onChunk, onComplete, conversationHistory = []) {
     if (!this.apiKey) throw new Error("Missing Gemini API key.");
 
-    const finalSessionId = sessionId || this.generateSessionId();
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:streamGenerateContent?key=${this.apiKey}`;
 
+    // Build conversation contents with history
+    const contents = [
+      ...conversationHistory,
+      {
+        role: "user",
+        parts: [{ text: message }],
+      },
+    ];
+
     const requestBody = {
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: message }],
-        },
-      ],
+      contents,
     };
 
     console.log("🚀 [Gemini] Sending streaming request:", message);
@@ -68,6 +72,7 @@ class ChatService {
     const reader = response.body.getReader();
     const decoder = new TextDecoder("utf-8");
     let accumulatedText = "";
+    let buffer = '';
 
     try {
       while (true) {
@@ -75,36 +80,174 @@ class ChatService {
         if (done) break;
 
         const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split("\n").filter((line) => line.trim() !== "");
+        buffer += chunk;
 
-        for (const line of lines) {
-          try {
-            const json = JSON.parse(line);
-            const textPart = json?.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (textPart) {
-              accumulatedText += textPart;
-              if (onChunk) onChunk(textPart);
+        // Gemini streams an array with comma-separated objects: [{...}, {...}, ...]
+        // We need to extract complete objects as they arrive
+        
+        // Try to find complete JSON objects in the buffer
+        let startIdx = 0;
+        
+        while (startIdx < buffer.length) {
+          // Find the start of a JSON object
+          const objStart = buffer.indexOf('{', startIdx);
+          if (objStart === -1) break;
+          
+          // Try to find the matching closing brace
+          let braceCount = 0;
+          let inString = false;
+          let escape = false;
+          let objEnd = -1;
+          
+          for (let i = objStart; i < buffer.length; i++) {
+            const char = buffer[i];
+            
+            if (escape) {
+              escape = false;
+              continue;
             }
-          } catch (e) {
-            // Ignore partial JSON chunks — they will complete in the next loop
+            
+            if (char === '\\') {
+              escape = true;
+              continue;
+            }
+            
+            if (char === '"') {
+              inString = !inString;
+              continue;
+            }
+            
+            if (!inString) {
+              if (char === '{') braceCount++;
+              if (char === '}') {
+                braceCount--;
+                if (braceCount === 0) {
+                  objEnd = i;
+                  break;
+                }
+              }
+            }
+          }
+          
+          // If we found a complete object
+          if (objEnd !== -1) {
+            const jsonStr = buffer.substring(objStart, objEnd + 1);
+            
+            try {
+              const json = JSON.parse(jsonStr);
+              const textPart = json?.candidates?.[0]?.content?.parts?.[0]?.text;
+              
+              if (textPart) {
+                accumulatedText += textPart;
+                if (onChunk) onChunk(textPart);
+              }
+            } catch (e) {
+              console.warn('⚠️ Failed to parse JSON object:', e.message);
+            }
+            
+            // Move past this object
+            startIdx = objEnd + 1;
+          } else {
+            // No complete object found, keep this part in buffer
+            break;
+          }
+        }
+        
+        // Keep the unparsed portion in the buffer
+        buffer = buffer.substring(startIdx);
+      }
+
+      // Process any remaining buffer content
+      if (buffer.trim()) {
+        // Try one more time to extract any remaining objects
+        let idx = 0;
+        while (idx < buffer.length) {
+          const objStart = buffer.indexOf('{', idx);
+          if (objStart === -1) break;
+          
+          let braceCount = 0;
+          let inString = false;
+          let escape = false;
+          let objEnd = -1;
+          
+          for (let i = objStart; i < buffer.length; i++) {
+            const char = buffer[i];
+            
+            if (escape) {
+              escape = false;
+              continue;
+            }
+            
+            if (char === '\\') {
+              escape = true;
+              continue;
+            }
+            
+            if (char === '"') {
+              inString = !inString;
+              continue;
+            }
+            
+            if (!inString) {
+              if (char === '{') braceCount++;
+              if (char === '}') {
+                braceCount--;
+                if (braceCount === 0) {
+                  objEnd = i;
+                  break;
+                }
+              }
+            }
+          }
+          
+          if (objEnd !== -1) {
+            const jsonStr = buffer.substring(objStart, objEnd + 1);
+            try {
+              const json = JSON.parse(jsonStr);
+              const textPart = json?.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (textPart) {
+                accumulatedText += textPart;
+                if (onChunk) onChunk(textPart);
+              }
+            } catch (e) {
+              console.warn('⚠️ Failed to parse final JSON:', e.message);
+            }
+            idx = objEnd + 1;
+          } else {
+            break;
           }
         }
       }
 
       if (!accumulatedText) {
-        console.warn("⚠️ Gemini returned an empty response.");
+        console.warn('⚠️ Gemini returned an empty response.');
+      } else {
+        console.log('✅ Stream complete. Total length:', accumulatedText.length);
       }
 
       if (onComplete) onComplete(accumulatedText);
 
+      // Build updated conversation history
+      const updatedHistory = [
+        ...conversationHistory,
+        {
+          role: "user",
+          parts: [{ text: message }],
+        },
+        {
+          role: "model",
+          parts: [{ text: accumulatedText }],
+        },
+      ];
+
       return {
-        session_id: finalSessionId,
         message: accumulatedText,
+        conversationHistory: updatedHistory,
       };
     } catch (streamError) {
-      console.error("🔥 Stream error:", streamError);
-      if (onComplete)
-        onComplete("⚠️ Gemini streaming failed. Please check your network or API key.");
+      console.error('🔥 Stream error:', streamError);
+      const errorMsg = '⚠️ Gemini streaming failed. Please check your network or API key.';
+      if (onComplete) onComplete(errorMsg);
       throw streamError;
     } finally {
       reader.releaseLock();

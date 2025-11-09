@@ -25,9 +25,14 @@ const MainContent = ({ activeTab, setActiveTab, tabs, allTabs, selectedAssistant
   const textareaRef = useRef(null);
   const tabsContainerRef = useRef(null);
 
-  const currentConversation = conversationsByTab[activeTab] || { chatSessions: [], sessionId: '' };
+  const currentConversation = conversationsByTab[activeTab] || { 
+    chatSessions: [], 
+    sessionId: '',
+    conversationHistory: [] // For Gemini conversation context
+  };
   const chatSessions = currentConversation.chatSessions || [];
   const sessionId = currentConversation.sessionId;
+  const conversationHistory = currentConversation.conversationHistory || [];
 
   const handleTabClose = (e, tabKey) => {
     e.stopPropagation();
@@ -41,7 +46,8 @@ const MainContent = ({ activeTab, setActiveTab, tabs, allTabs, selectedAssistant
     }
   };
 
-  const [showNewInput, setShowNewInput] = useState(chatSessions.length === 0);
+  // Always show input box for continuous conversation
+  const [showNewInput] = useState(true);
 
   useEffect(() => {
     if (clearTrigger > 0 && activeTab) {
@@ -56,17 +62,6 @@ const MainContent = ({ activeTab, setActiveTab, tabs, allTabs, selectedAssistant
       setCopiedId(null);
     }
   }, [clearTrigger]);
-
-  useEffect(() => {
-    if (chatSessions.length === 0) {
-      setShowNewInput(true);
-    } else {
-      const lastSession = chatSessions[chatSessions.length - 1];
-      if (lastSession && lastSession.response) {
-        setShowNewInput(false);
-      }
-    }
-  }, [activeTab, chatSessions.length]);
 
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
@@ -117,6 +112,7 @@ const MainContent = ({ activeTab, setActiveTab, tabs, allTabs, selectedAssistant
         ...prev[activeTab],
         chatSessions: prev[activeTab]?.chatSessions || [],
         sessionId: prev[activeTab]?.sessionId || '',
+        conversationHistory: prev[activeTab]?.conversationHistory || [],
         ...updates,
       },
     }));
@@ -197,193 +193,189 @@ const MainContent = ({ activeTab, setActiveTab, tabs, allTabs, selectedAssistant
     setComponentValues({ ...componentValues, [componentIndex]: text });
   };
 
-  const handleNewChat = () => {
-    setInputValue('');
-    setComponentValues(preserveNonInputValues());
-    setShowNewInput(true);
-    setTimeout(() => {
-      if (textareaRef.current) {
-        textareaRef.current.focus();
-      }
-      scrollToBottom();
-    }, 100);
-  };
-
   const handleTextareaKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
-      e.stopPropagation();
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
     }
   };
 
   const handleSendMessage = async () => {
-      const components = selectedAssistant?.components || [];
-      const hasComponents = components.length > 0;
+    const components = selectedAssistant?.components || [];
+    const hasComponents = components.length > 0;
 
-      if (hasComponents) {
-        const allFilled = components.every((comp, index) => {
+    if (hasComponents) {
+      const allFilled = components.every((comp, index) => {
+        const value = componentValues[index];
+        return value && value.trim() !== '';
+      });
+      if (!allFilled || !hasApi) return;
+    } else {
+      if (!inputValue.trim() || !hasApi || isTyping) return;
+    }
+
+    let userMessageText;
+    let displayText;
+
+    if (hasComponents) {
+      const emailTrail = componentValues[0] || '';
+      const additionalInstructions = [];
+
+      components.forEach((comp, index) => {
+        if (index > 0) {
           const value = componentValues[index];
-          return value && value.trim() !== '';
-        });
-        if (!allFilled || !hasApi) return;
-      } else {
-        if (!inputValue.trim() || !hasApi) return;
-      }
-
-      let userMessageText;
-      let displayText;
-
-      if (hasComponents) {
-        const emailTrail = componentValues[0] || '';
-        const additionalInstructions = [];
-
-        components.forEach((comp, index) => {
-          if (index > 0) {
-            const value = componentValues[index];
-            if (comp.additionalInstructions && value) {
-              const instruction = comp.additionalInstructions.replace(/\{\{value\}\}/g, value);
-              additionalInstructions.push(instruction);
-            } else if (comp.componentType === 'radio' && value) {
-              additionalInstructions.push(`Please respond in a ${value} tone.`);
-            } else if (comp.componentType === 'dropDown' && comp.header.toLowerCase().includes('sender') && value) {
-              additionalInstructions.push(`Sender: ${value}`);
-            }
+          if (comp.additionalInstructions && value) {
+            const instruction = comp.additionalInstructions.replace(/\{\{value\}\}/g, value);
+            additionalInstructions.push(instruction);
+          } else if (comp.componentType === 'radio' && value) {
+            additionalInstructions.push(`Please respond in a ${value} tone.`);
+          } else if (comp.componentType === 'dropDown' && comp.header.toLowerCase().includes('sender') && value) {
+            additionalInstructions.push(`Sender: ${value}`);
           }
-        });
-
-        userMessageText = additionalInstructions.length > 0
-          ? `${additionalInstructions.join(' ')}\n\n${emailTrail}`
-          : emailTrail;
-        displayText = emailTrail;
-      } else {
-        userMessageText = inputValue;
-        displayText = inputValue;
-      }
-
-      const chatId = Date.now();
-
-      const newChatSession = {
-        id: chatId,
-        inputText: displayText,
-        componentData: hasComponents ? { ...componentValues } : null,
-        response: null,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        isError: false,
-      };
-
-      const updatedSessions = [...chatSessions, newChatSession];
-      updateCurrentConversation({
-        chatSessions: updatedSessions,
+        }
       });
 
-      setInputValue('');
-      setComponentValues(preserveNonInputValues());
-      setShowNewInput(false);
-      setIsTyping(true);
+      userMessageText = additionalInstructions.length > 0
+        ? `${additionalInstructions.join(' ')}\n\n${emailTrail}`
+        : emailTrail;
+      displayText = emailTrail;
+    } else {
+      userMessageText = inputValue;
+      displayText = inputValue;
+    }
 
-      try {
-        const apiConfig = selectedAssistant.api;
-        let response = null;
+    const chatId = Date.now();
 
-        if (apiConfig.type === 'meeting') {
-          // Legacy IXhello meeting API
-          const { chatUrl, skillPublishingId, clientId } = apiConfig;
-          response = await chatService.sendMeetingMessage(
-            chatUrl,
-            skillPublishingId,
-            clientId,
-            userMessageText,
-            sessionId
-          );
-        } else if (apiConfig.provider === 'gemini') {
-          // ✅ Gemini 2.0 Flash Streaming
-          let fullText = '';
-
-          response = await chatService.sendMessageStream(
-            userMessageText,
-            (chunk) => {
-              fullText += chunk;
-              updateCurrentConversation({
-                chatSessions: updatedSessions.map((chat) =>
-                  chat.id === chatId ? { ...chat, response: fullText } : chat
-                ),
-              });
-            },
-            (finalText) => {
-              updateCurrentConversation({
-                chatSessions: updatedSessions.map((chat) =>
-                  chat.id === chatId ? { ...chat, response: finalText } : chat
-                ),
-                sessionId: sessionId || 'gemini_' + Date.now(),
-              });
-              setIsTyping(false);
-            }
-          );
-        } else {
-          // Legacy IXhello text API
-          const { authUrl, chatUrl, credentials, assistantId } = apiConfig;
-          response = await chatService.sendMessage(
-            chatUrl,
-            authUrl,
-            credentials,
-            assistantId,
-            userMessageText,
-            sessionId
-          );
-        }
-
-        // ✅ Only process this if a response object actually exists
-        if (response) {
-          const assistantText =
-            response.message ||
-            response.response ||
-            response.reply ||
-            response.text ||
-            response.answer ||
-            (response.data && response.data.message) ||
-            'I received your message but could not generate a response.';
-
-          const finalSessions = updatedSessions.map((chat) =>
-            chat.id === chatId ? { ...chat, response: assistantText } : chat
-          );
-
-          updateCurrentConversation({
-            chatSessions: finalSessions,
-            sessionId: response.session_id || sessionId,
-          });
-        }
-      }
-       
-      catch (error) {
-    console.error("🔥 Gemini/IXhello error trace:", error?.message || error, error);
-
-    const finalSessions = updatedSessions.map((chat) =>
-      chat.id === chatId
-        ? {
-            ...chat,
-            response:
-              error?.message?.includes("API key") ||
-              error?.message?.includes("403")
-                ? "⚠️ API key error — please check your Gemini API key."
-                : error?.message?.includes("401")
-                ? "⚠️ Authentication failed. Please verify your IXhello credentials."
-                : "Sorry, I encountered an error. Please try again.",
-            isError: true,
-          }
-        : chat
-    );
-
-    updateCurrentConversation({
-      chatSessions: finalSessions,
-    });
-  } finally {
-    setIsTyping(false);
-  }
-      
+    const newChatSession = {
+      id: chatId,
+      inputText: displayText,
+      componentData: hasComponents ? { ...componentValues } : null,
+      response: null,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      isError: false,
     };
 
+    const updatedSessions = [...chatSessions, newChatSession];
+    updateCurrentConversation({
+      chatSessions: updatedSessions,
+    });
 
+    setInputValue('');
+    setComponentValues(preserveNonInputValues());
+    setIsTyping(true);
 
-  
+    // Scroll to bottom immediately when user sends message
+    setTimeout(scrollToBottom, 50);
+
+    try {
+      const apiConfig = selectedAssistant.api;
+      let response = null;
+
+      if (apiConfig.type === 'meeting') {
+        // Legacy IXhello meeting API
+        const { chatUrl, skillPublishingId, clientId } = apiConfig;
+        response = await chatService.sendMeetingMessage(
+          chatUrl,
+          skillPublishingId,
+          clientId,
+          userMessageText,
+          sessionId
+        );
+      } else if (apiConfig.provider === 'gemini') {
+        // ✅ Gemini 2.0 Flash Streaming with Conversation History
+        let fullText = '';
+
+        response = await chatService.sendMessageStream(
+          userMessageText,
+          (chunk) => {
+            fullText += chunk;
+            updateCurrentConversation({
+              chatSessions: updatedSessions.map((chat) =>
+                chat.id === chatId ? { ...chat, response: fullText } : chat
+              ),
+            });
+          },
+          (finalText) => {
+            // onComplete callback - just for logging
+            console.log('✅ Message complete:', finalText.substring(0, 50));
+          },
+          conversationHistory // Pass conversation history for context
+        );
+
+        // Update with final response and conversation history
+        const finalSessions = updatedSessions.map((chat) =>
+          chat.id === chatId ? { ...chat, response: response.message } : chat
+        );
+
+        updateCurrentConversation({
+          chatSessions: finalSessions,
+          conversationHistory: response.conversationHistory, // Save updated history
+        });
+      } else {
+        // Legacy IXhello text API
+        const { authUrl, chatUrl, credentials, assistantId } = apiConfig;
+        response = await chatService.sendMessage(
+          chatUrl,
+          authUrl,
+          credentials,
+          assistantId,
+          userMessageText,
+          sessionId
+        );
+      }
+
+      // ✅ Only process this if a response object actually exists (for non-Gemini APIs)
+      if (response && apiConfig.provider !== 'gemini') {
+        const assistantText =
+          response.message ||
+          response.response ||
+          response.reply ||
+          response.text ||
+          response.answer ||
+          (response.data && response.data.message) ||
+          'I received your message but could not generate a response.';
+
+        const finalSessions = updatedSessions.map((chat) =>
+          chat.id === chatId ? { ...chat, response: assistantText } : chat
+        );
+
+        updateCurrentConversation({
+          chatSessions: finalSessions,
+          sessionId: response.session_id || sessionId,
+        });
+      }
+    } catch (error) {
+      console.error("🔥 API error trace:", error?.message || error, error);
+
+      const finalSessions = updatedSessions.map((chat) =>
+        chat.id === chatId
+          ? {
+              ...chat,
+              response:
+                error?.message?.includes("API key") ||
+                error?.message?.includes("403")
+                  ? "⚠️ API key error — please check your Gemini API key."
+                  : error?.message?.includes("401")
+                  ? "⚠️ Authentication failed. Please verify your credentials."
+                  : "Sorry, I encountered an error. Please try again.",
+              isError: true,
+            }
+          : chat
+      );
+
+      updateCurrentConversation({
+        chatSessions: finalSessions,
+      });
+    } finally {
+      setIsTyping(false);
+      // Focus back on input after sending
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+        }
+      }, 100);
+    }
+  };
 
   const renderDynamicComponent = (component, index, isEditable = true, value = '') => {
     const componentValue = isEditable ? componentValues[index] || '' : value;
@@ -547,6 +539,15 @@ const MainContent = ({ activeTab, setActiveTab, tabs, allTabs, selectedAssistant
 
             {chatSessions.map((chat) => (
               <div key={chat.id} className='chat-session'>
+                {/* User Message */}
+                {!chat.componentData && chat.inputText && (
+                  <div className='user-message-section'>
+                    <div className='user-message-box'>
+                      <div className='user-message-text'>{chat.inputText}</div>
+                    </div>
+                  </div>
+                )}
+
                 {chat.componentData &&
                   selectedAssistant?.components &&
                   selectedAssistant.components.length > 0 &&
@@ -554,6 +555,7 @@ const MainContent = ({ activeTab, setActiveTab, tabs, allTabs, selectedAssistant
                     return renderDynamicComponent(component, idx, false, chat.componentData[idx]);
                   })}
 
+                {/* Assistant Response */}
                 {chat.response && (
                   <div className='response-section'>
                     <div className={`response-box ${chat.isError ? 'error' : ''}`}>
@@ -578,6 +580,23 @@ const MainContent = ({ activeTab, setActiveTab, tabs, allTabs, selectedAssistant
               </div>
             ))}
 
+            {isTyping && (
+              <div className='response-section'>
+                <div className='typing-indicator-box'>
+                  <div className='typing-dots'>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Fixed Input Box at Bottom */}
+          <div className='chat-input-container'>
             {showNewInput && (
               <>
                 {selectedAssistant?.components && selectedAssistant.components.length > 0 ? (
@@ -593,10 +612,18 @@ const MainContent = ({ activeTab, setActiveTab, tabs, allTabs, selectedAssistant
                     </div>
                   </>
                 ) : (
-                  <div className='input-section'>
-                    <label className='input-label'>Type your message :</label>
+                  <div className='input-section simple-input'>
                     <div className='text-input-wrapper'>
-                      <textarea ref={textareaRef} className='text-input' value={inputValue} onChange={(e) => setInputValue(e.target.value)} onKeyDown={handleTextareaKeyDown} placeholder='Type your message here...' rows={8} />
+                      <textarea 
+                        ref={textareaRef} 
+                        className='text-input' 
+                        value={inputValue} 
+                        onChange={(e) => setInputValue(e.target.value)} 
+                        onKeyDown={handleTextareaKeyDown} 
+                        placeholder='Type your message here... (Press Enter to send)' 
+                        rows={3}
+                        disabled={isTyping}
+                      />
                       <button className='send-icon-btn' onClick={handleSendMessage} disabled={!inputValue.trim() || isTyping}>
                         <svg width='20' height='20' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'>
                           <path d='M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round' />
@@ -607,30 +634,6 @@ const MainContent = ({ activeTab, setActiveTab, tabs, allTabs, selectedAssistant
                 )}
               </>
             )}
-
-            {isTyping && (
-              <div className='response-section'>
-                <div className='typing-indicator-box'>
-                  <div className='typing-dots'>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {chatSessions.length > 0 && !isTyping && !showNewInput && chatSessions[chatSessions.length - 1].response && (
-              <div className='new-chat-section'>
-                <button className='new-chat-btn' onClick={handleNewChat}>
-                  <svg width='18' height='18' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'>
-                    <path d='M12 5v14M5 12h14' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round' />
-                  </svg>
-                  Initiate a new chat
-                </button>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
           </div>
         </div>
       ) : (

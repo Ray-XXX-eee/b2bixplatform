@@ -11,7 +11,7 @@ const Header = ({ selectedAssistant, onClearAll, activeTabKey }) => {
     <header className='header'>
       <div className='header-left'>
         <div className='header-info'>
-          <img src={isDarkMode ? '/assets/CNX_Reverse_RGB.svg' : '/assets/CNX_Full Color.svg'} alt='Concentrix' className='header-logo' />
+          <img src={isDarkMode ? '/assets/mental_1.webp' : '/assets/mental_1.webp'} alt='Concentrix' className='header-logo' />
         </div>
       </div>
       <div className='header-right'>
