@@ -216,100 +216,171 @@ const MainContent = ({ activeTab, setActiveTab, tabs, allTabs, selectedAssistant
   };
 
   const handleSendMessage = async () => {
-    const components = selectedAssistant?.components || [];
-    const hasComponents = components.length > 0;
+      const components = selectedAssistant?.components || [];
+      const hasComponents = components.length > 0;
 
-    if (hasComponents) {
-      const allFilled = components.every((comp, index) => {
-        const value = componentValues[index];
-        return value && value.trim() !== '';
-      });
-      if (!allFilled || !hasApi) return;
-    } else {
-      if (!inputValue.trim() || !hasApi) return;
-    }
-
-    let userMessageText;
-    let displayText;
-
-    if (hasComponents) {
-      const emailTrail = componentValues[0] || '';
-      const additionalInstructions = [];
-
-      components.forEach((comp, index) => {
-        if (index > 0) {
+      if (hasComponents) {
+        const allFilled = components.every((comp, index) => {
           const value = componentValues[index];
-          if (comp.additionalInstructions && value) {
-            const instruction = comp.additionalInstructions.replace(/\{\{value\}\}/g, value);
-            additionalInstructions.push(instruction);
-          } else if (comp.componentType === 'radio' && value) {
-            additionalInstructions.push(`Please respond in a ${value} tone.`);
-          } else if (comp.componentType === 'dropDown' && comp.header.toLowerCase().includes('sender') && value) {
-            additionalInstructions.push(`Sender: ${value}`);
-          }
-        }
-      });
-
-      userMessageText = additionalInstructions.length > 0 ? `${additionalInstructions.join(' ')}\n\n${emailTrail}` : emailTrail;
-      displayText = emailTrail;
-    } else {
-      userMessageText = inputValue;
-      displayText = inputValue;
-    }
-
-    const chatId = Date.now();
-
-    const newChatSession = {
-      id: chatId,
-      inputText: displayText,
-      componentData: hasComponents ? { ...componentValues } : null,
-      response: null,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      isError: false,
-    };
-
-    const updatedSessions = [...chatSessions, newChatSession];
-    updateCurrentConversation({
-      chatSessions: updatedSessions,
-    });
-
-    setInputValue('');
-    setComponentValues(preserveNonInputValues());
-    setShowNewInput(false);
-    setIsTyping(true);
-
-    try {
-      const apiConfig = selectedAssistant.api;
-      let response;
-
-      if (apiConfig.type === 'meeting') {
-        const { chatUrl, skillPublishingId, clientId } = apiConfig;
-        response = await chatService.sendMeetingMessage(chatUrl, skillPublishingId, clientId, userMessageText, sessionId);
+          return value && value.trim() !== '';
+        });
+        if (!allFilled || !hasApi) return;
       } else {
-        const { authUrl, chatUrl, credentials, assistantId } = apiConfig;
-        response = await chatService.sendMessage(chatUrl, authUrl, credentials, assistantId, userMessageText, sessionId);
+        if (!inputValue.trim() || !hasApi) return;
       }
 
-      const assistantText = response.message || response.response || response.reply || response.text || response.answer || (response.data && response.data.message) || 'I received your message but could not generate a response.';
+      let userMessageText;
+      let displayText;
 
-      const finalSessions = updatedSessions.map((chat) => (chat.id === chatId ? { ...chat, response: assistantText } : chat));
+      if (hasComponents) {
+        const emailTrail = componentValues[0] || '';
+        const additionalInstructions = [];
 
+        components.forEach((comp, index) => {
+          if (index > 0) {
+            const value = componentValues[index];
+            if (comp.additionalInstructions && value) {
+              const instruction = comp.additionalInstructions.replace(/\{\{value\}\}/g, value);
+              additionalInstructions.push(instruction);
+            } else if (comp.componentType === 'radio' && value) {
+              additionalInstructions.push(`Please respond in a ${value} tone.`);
+            } else if (comp.componentType === 'dropDown' && comp.header.toLowerCase().includes('sender') && value) {
+              additionalInstructions.push(`Sender: ${value}`);
+            }
+          }
+        });
+
+        userMessageText = additionalInstructions.length > 0
+          ? `${additionalInstructions.join(' ')}\n\n${emailTrail}`
+          : emailTrail;
+        displayText = emailTrail;
+      } else {
+        userMessageText = inputValue;
+        displayText = inputValue;
+      }
+
+      const chatId = Date.now();
+
+      const newChatSession = {
+        id: chatId,
+        inputText: displayText,
+        componentData: hasComponents ? { ...componentValues } : null,
+        response: null,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isError: false,
+      };
+
+      const updatedSessions = [...chatSessions, newChatSession];
       updateCurrentConversation({
-        chatSessions: finalSessions,
-        sessionId: response.session_id || sessionId,
+        chatSessions: updatedSessions,
       });
-    } catch (err) {
-      console.error('Error sending message:', err);
 
-      const finalSessions = updatedSessions.map((chat) => (chat.id === chatId ? { ...chat, response: 'Sorry, I encountered an error. Please try again.', isError: true } : chat));
+      setInputValue('');
+      setComponentValues(preserveNonInputValues());
+      setShowNewInput(false);
+      setIsTyping(true);
 
-      updateCurrentConversation({
-        chatSessions: finalSessions,
-      });
-    } finally {
-      setIsTyping(false);
-    }
-  };
+      try {
+        const apiConfig = selectedAssistant.api;
+        let response = null;
+
+        if (apiConfig.type === 'meeting') {
+          // Legacy IXhello meeting API
+          const { chatUrl, skillPublishingId, clientId } = apiConfig;
+          response = await chatService.sendMeetingMessage(
+            chatUrl,
+            skillPublishingId,
+            clientId,
+            userMessageText,
+            sessionId
+          );
+        } else if (apiConfig.provider === 'gemini') {
+          // ✅ Gemini 2.0 Flash Streaming
+          let fullText = '';
+
+          response = await chatService.sendMessageStream(
+            userMessageText,
+            (chunk) => {
+              fullText += chunk;
+              updateCurrentConversation({
+                chatSessions: updatedSessions.map((chat) =>
+                  chat.id === chatId ? { ...chat, response: fullText } : chat
+                ),
+              });
+            },
+            (finalText) => {
+              updateCurrentConversation({
+                chatSessions: updatedSessions.map((chat) =>
+                  chat.id === chatId ? { ...chat, response: finalText } : chat
+                ),
+                sessionId: sessionId || 'gemini_' + Date.now(),
+              });
+              setIsTyping(false);
+            }
+          );
+        } else {
+          // Legacy IXhello text API
+          const { authUrl, chatUrl, credentials, assistantId } = apiConfig;
+          response = await chatService.sendMessage(
+            chatUrl,
+            authUrl,
+            credentials,
+            assistantId,
+            userMessageText,
+            sessionId
+          );
+        }
+
+        // ✅ Only process this if a response object actually exists
+        if (response) {
+          const assistantText =
+            response.message ||
+            response.response ||
+            response.reply ||
+            response.text ||
+            response.answer ||
+            (response.data && response.data.message) ||
+            'I received your message but could not generate a response.';
+
+          const finalSessions = updatedSessions.map((chat) =>
+            chat.id === chatId ? { ...chat, response: assistantText } : chat
+          );
+
+          updateCurrentConversation({
+            chatSessions: finalSessions,
+            sessionId: response.session_id || sessionId,
+          });
+        }
+      }
+       
+      catch (error) {
+    console.error("🔥 Gemini/IXhello error trace:", error?.message || error, error);
+
+    const finalSessions = updatedSessions.map((chat) =>
+      chat.id === chatId
+        ? {
+            ...chat,
+            response:
+              error?.message?.includes("API key") ||
+              error?.message?.includes("403")
+                ? "⚠️ API key error — please check your Gemini API key."
+                : error?.message?.includes("401")
+                ? "⚠️ Authentication failed. Please verify your IXhello credentials."
+                : "Sorry, I encountered an error. Please try again.",
+            isError: true,
+          }
+        : chat
+    );
+
+    updateCurrentConversation({
+      chatSessions: finalSessions,
+    });
+  } finally {
+    setIsTyping(false);
+  }
+      
+    };
+
 
 
   
